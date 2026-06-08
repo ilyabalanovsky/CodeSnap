@@ -22,6 +22,7 @@
     "@codemirror/language-data": "^6.5.2",
     "@codemirror/legacy-modes": "^6.5.3",
     "@codemirror/theme-one-dark": "^6.1.3",
+    "@lucide/svelte": "^1.17.0",
     "@tauri-apps/api": "2.11.0",
     "@uiw/codemirror-theme-darcula": "^4.25.10",
     "@uiw/codemirror-theme-github": "^4.25.10",
