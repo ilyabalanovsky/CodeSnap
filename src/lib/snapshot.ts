@@ -1,12 +1,21 @@
 import { toPng } from 'html-to-image';
 
 export async function renderNodeToPngDataUrl(node: HTMLElement): Promise<string> {
+  const width = Math.ceil(node.getBoundingClientRect().width);
+  const height = Math.ceil(Math.max(node.scrollHeight, node.getBoundingClientRect().height));
+
   return toPng(node, {
     cacheBust: true,
+    height,
     pixelRatio: 2,
     style: {
+      height: `${height}px`,
+      maxHeight: 'none',
+      overflow: 'hidden',
       transform: 'none',
+      width: `${width}px`,
     },
+    width,
   });
 }
 

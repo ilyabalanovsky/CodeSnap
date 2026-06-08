@@ -79,19 +79,19 @@
     return EditorView.theme({
       '&': {
         fontSize: '14px',
-        height: '100%',
+        height: 'auto',
       },
       '.cm-content': {
         fontFamily: '"JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace',
         lineHeight: String(height),
-        padding: '28px 30px 32px',
+        padding: '28px 30px 76px',
       },
       '.cm-line': {
         padding: '0',
       },
       '.cm-scroller': {
         fontFamily: '"JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace',
-        overflow: 'auto',
+        overflow: 'visible',
       },
       '.cm-gutters': {
         borderRight: '0',

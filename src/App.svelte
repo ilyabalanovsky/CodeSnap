@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ChevronLeft, ChevronRight, Clipboard, Code2, Copy, ImageIcon, Palette, Save, SlidersHorizontal, ToggleLeft } from '@lucide/svelte';
-  import { tick } from 'svelte';
+  import { onMount, tick } from 'svelte';
+  import { listen, type UnlistenFn } from '@tauri-apps/api/event';
   import CodeEditor from './lib/CodeEditor.svelte';
   import CustomSelect from './lib/CustomSelect.svelte';
   import MarkdownPreview from './lib/MarkdownPreview.svelte';
@@ -10,17 +11,28 @@
 
   type Backdrop = 'aurora' | 'red' | 'violet' | 'blue' | 'sunset' | 'mint' | 'graphite' | 'paper' | 'solid';
   type ExportState = 'idle' | 'saving' | 'copying' | 'saved' | 'copied' | 'failed';
+  type CapturedCodePayload = {
+    code: string;
+    source: string;
+  };
 
-  const sampleCode = `import { createSignal } from "solid-js";
+  const codeCapturedEvent = 'codesnap://code-captured';
+
+  const sampleCode = `type Mood = "focused" | "curious" | "slightly-caffeinated";
 
 type Snapshot = {
   language: "typescript" | "rust" | "python";
+  mood: Mood;
   scale: 2;
 };
 
 export function createCodeSnap(source: string): Snapshot {
-  const [theme] = createSignal("darcula");
-  return renderSnapshot(source, theme());
+  const mood = source.includes("TODO") ? "curious" : "focused";
+  return renderSnapshot(source, {
+    theme: "darcula",
+    mood,
+    snacks: "optional",
+  });
 }`;
 
   const themes = [
@@ -289,6 +301,7 @@ export function createCodeSnap(source: string): Snapshot {
     if (text.trim()) {
       code = text;
       languageChoice = '__auto';
+      cuePreviewMotion();
     }
   }
 
@@ -330,6 +343,32 @@ export function createCodeSnap(source: string): Snapshot {
       }, 1600);
     }
   }
+
+  onMount(() => {
+    let unlisten: UnlistenFn | undefined;
+
+    void listen<CapturedCodePayload>(codeCapturedEvent, (event) => {
+      const nextCode = event.payload.code;
+
+      if (!nextCode.trim()) {
+        return;
+      }
+
+      code = nextCode;
+      languageChoice = '__auto';
+      cuePreviewMotion();
+    })
+      .then((nextUnlisten) => {
+        unlisten = nextUnlisten;
+      })
+      .catch(() => {
+        // Browser preview mode does not expose Tauri events.
+      });
+
+    return () => {
+      unlisten?.();
+    };
+  });
 </script>
 
 <svelte:head>

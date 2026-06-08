@@ -54,7 +54,9 @@ button {
 .app-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
+  height: 100vh;
   min-height: 100vh;
+  overflow: hidden;
   background: #051424;
   transform-origin: center;
   animation: app-enter 660ms var(--ease-out) both;
@@ -64,14 +66,23 @@ button {
   position: relative;
   isolation: isolate;
   display: grid;
-  place-items: center;
+  align-items: safe center;
+  justify-items: center;
+  align-content: safe center;
   min-width: 0;
+  height: 100vh;
   min-height: 100vh;
   padding: clamp(24px, 5vw, 58px);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
   transition:
     background 620ms var(--ease-out),
     padding 380ms var(--ease-snap);
+}
+
+.stage::-webkit-scrollbar {
+  display: none;
 }
 
 .stage::before {
@@ -233,7 +244,7 @@ button {
   display: flex;
   flex-direction: column;
   width: min(860px, 100%);
-  max-height: calc(100vh - 116px);
+  min-width: 0;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
@@ -244,7 +255,6 @@ button {
   transition:
     transform 300ms var(--ease-pop),
     width 420ms var(--ease-snap),
-    max-height 420ms var(--ease-snap),
     border-color 220ms ease,
     border-radius 360ms var(--ease-snap),
     box-shadow 360ms var(--ease-snap);
@@ -256,7 +266,7 @@ button {
 
 .code-window.only-code {
   width: 100%;
-  min-height: 100vh;
+  min-height: 0;
   border: 0;
   border-radius: 0;
   box-shadow: none;
@@ -379,18 +389,19 @@ button {
 }
 
 .editor-host {
-  flex: 1 1 auto;
-  height: clamp(156px, calc(((var(--preview-lines, 1) + 3.5) * 14px * var(--preview-line-height, 1.55)) + 60px), calc(100vh - 190px));
+  flex: 0 0 auto;
+  min-height: 156px;
+  height: auto;
   transform-origin: top center;
   animation: content-draw 260ms var(--ease-out) both;
 }
 
 .markdown-preview {
-  flex: 1 1 auto;
-  min-height: 0;
-  height: clamp(156px, calc(((var(--preview-lines, 1) + 3.5) * 15px * var(--preview-line-height, 1.55)) + 66px), calc(100vh - 190px));
-  padding: 30px 34px 36px;
-  overflow: auto;
+  flex: 0 0 auto;
+  min-height: 156px;
+  height: auto;
+  padding: 30px 34px 76px;
+  overflow: visible;
   color: #d9e1e8;
   background: #2b2b2b;
   font-family:
@@ -480,7 +491,7 @@ button {
 }
 
 .editor-host .cm-editor {
-  height: 100%;
+  height: auto;
 }
 
 .editor-host .cm-focused {
@@ -1673,10 +1684,15 @@ input[type="range"] {
 @media (max-width: 860px) {
   .app-shell {
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
   }
 
   .stage {
+    height: auto;
     min-height: 560px;
+    overflow: visible;
   }
 
   .controls {
@@ -1695,16 +1711,7 @@ input[type="range"] {
     padding: 18px;
   }
 
-  .code-window {
-    max-height: calc(100vh - 72px);
-  }
-
-  .editor-host {
-    height: clamp(156px, calc(((var(--preview-lines, 1) + 3.5) * 14px * var(--preview-line-height, 1.55)) + 60px), calc(100vh - 112px));
-  }
-
   .markdown-preview {
-    height: clamp(156px, calc(((var(--preview-lines, 1) + 3.5) * 15px * var(--preview-line-height, 1.55)) + 58px), calc(100vh - 112px));
-    padding: 24px;
+    padding: 24px 24px 70px;
   }
 }

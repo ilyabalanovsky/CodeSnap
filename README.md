@@ -16,9 +16,13 @@ You open CodeSnap and get a focused editor with a live preview. The code is edit
 
 The preview can look like a framed terminal window, a clean code block, or a full composition with background. If you only want the code, switch on `Only code` and CodeSnap strips everything else away.
 
+For the fastest flow, keep CodeSnap in the tray. Select code anywhere, press `Ctrl+Shift+S`, and the app opens with that snippet already loaded.
+
 ## Features
 
 - Editable CodeMirror editor in the preview area.
+- System tray workflow with quick show, capture, and quit actions.
+- Global hotkey capture: select code anywhere and press `Ctrl+Shift+S`.
 - Automatic language detection with manual override.
 - Support for the CodeMirror language catalog, including 140+ languages and plain text.
 - IDE style themes: Darcula, GitHub Dark, GitHub Light, Material Dark, and One Dark.
