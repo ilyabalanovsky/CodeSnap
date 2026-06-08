@@ -28,6 +28,10 @@
   "bundle": {
     "active": false,
     "targets": [],
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon.png"
+    ],
     "category": "DeveloperTool",
     "shortDescription": "Beautiful code screenshots for desktop.",
     "longDescription": "CodeSnap creates professional PNG screenshots of selected code from a lightweight Tauri desktop app."

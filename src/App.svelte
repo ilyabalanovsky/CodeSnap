@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Clipboard, Copy, Save } from '@lucide/svelte';
+  import { ChevronLeft, ChevronRight, Clipboard, Code2, Copy, ImageIcon, Palette, Save, SlidersHorizontal, ToggleLeft } from '@lucide/svelte';
   import { tick } from 'svelte';
   import CodeEditor from './lib/CodeEditor.svelte';
   import CustomSelect from './lib/CustomSelect.svelte';
@@ -8,7 +8,7 @@
   import { copySnapshotPng, getClipboardText, hideToTray, saveSnapshotPng } from './lib/tauri';
   import { copyDataUrlToClipboard, renderNodeToPngDataUrl } from './lib/snapshot';
 
-  type Backdrop = 'aurora' | 'graphite' | 'paper' | 'solid';
+  type Backdrop = 'aurora' | 'red' | 'violet' | 'blue' | 'sunset' | 'mint' | 'graphite' | 'paper' | 'solid';
   type ExportState = 'idle' | 'saving' | 'copying' | 'saved' | 'copied' | 'failed';
 
   const sampleCode = `import { createSignal } from "solid-js";
@@ -33,6 +33,11 @@ export function createCodeSnap(source: string): Snapshot {
 
   const backgrounds = [
     { value: 'aurora', label: 'Aurora' },
+    { value: 'red', label: 'Ruby' },
+    { value: 'violet', label: 'Violet' },
+    { value: 'blue', label: 'Ocean' },
+    { value: 'sunset', label: 'Sunset' },
+    { value: 'mint', label: 'Mint' },
     { value: 'graphite', label: 'Graphite' },
     { value: 'paper', label: 'Paper' },
     { value: 'solid', label: 'Solid' },
@@ -50,6 +55,7 @@ export function createCodeSnap(source: string): Snapshot {
   let backdrop: Backdrop = 'aurora';
   let includeBackground = true;
   let includeTitleBar = true;
+  let includeLineNumbers = true;
   let onlyCode = false;
   let renderMarkdownPreview = true;
   let lineHeight = 1.55;
@@ -61,13 +67,18 @@ export function createCodeSnap(source: string): Snapshot {
   let backgroundFlashMode: 'in' | 'out' | null = 'in';
   let backgroundFlashBackdrop: Backdrop = backdrop;
   let backgroundFlashTimer: number | undefined;
+  let backgroundOffset = 0;
 
   $: isBusy = exportState === 'saving' || exportState === 'copying';
   $: detectedLanguage = detectLanguageFromCode(code);
   $: languageSelectOptions = [{ value: '__auto', label: `Auto detect (${detectedLanguage})` }, ...languageOptions];
+  $: visibleBackgrounds = backgrounds.slice(backgroundOffset, backgroundOffset + 4);
+  $: canMoveBackgroundsLeft = backgroundOffset > 0;
+  $: canMoveBackgroundsRight = backgroundOffset < backgrounds.length - 4;
   $: activeLanguage = languageChoice === '__auto' ? detectedLanguage : languageChoice;
   $: isMarkdown = activeLanguage === 'Markdown';
   $: isMarkdownPreview = isMarkdown && renderMarkdownPreview;
+  $: previewLineCount = Math.max(1, code.split('\n').length);
   $: fileExtension = extensionForLanguage(activeLanguage);
   $: if (fileExtension !== lastLanguageExtension) {
     if (fileName === `snippet.${lastLanguageExtension}` || fileName === 'snippet') {
@@ -75,15 +86,6 @@ export function createCodeSnap(source: string): Snapshot {
     }
     lastLanguageExtension = fileExtension;
   }
-  $: actionLabel = {
-    idle: '',
-    saving: 'Saving...',
-    copying: 'Copying...',
-    saved: 'Saved',
-    copied: 'Copied',
-    failed: 'Failed',
-  }[exportState];
-
   function updateCode(nextCode: string): void {
     code = nextCode;
   }
@@ -185,6 +187,21 @@ export function createCodeSnap(source: string): Snapshot {
     cueBackgroundMotion('in', nextBackdrop);
   }
 
+  function moveBackgrounds(direction: -1 | 1): void {
+    backgroundOffset = Math.min(Math.max(backgroundOffset + direction, 0), backgrounds.length - 4);
+  }
+
+  function onBackgroundWheel(event: WheelEvent): void {
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+
+    if (Math.abs(delta) < 2) {
+      return;
+    }
+
+    event.preventDefault();
+    moveBackgrounds(delta > 0 ? 1 : -1);
+  }
+
   function onOnlyCodeChange(event: Event): void {
     const nextOnlyCode = (event.currentTarget as HTMLInputElement).checked;
     const backgroundDirection = nextOnlyCode ? 'out' : 'in';
@@ -195,9 +212,11 @@ export function createCodeSnap(source: string): Snapshot {
     if (onlyCode) {
       includeBackground = false;
       includeTitleBar = false;
+      includeLineNumbers = false;
     } else {
       includeBackground = true;
       includeTitleBar = true;
+      includeLineNumbers = true;
     }
 
     cueBackgroundMotion(backgroundDirection, motionBackdrop);
@@ -213,6 +232,10 @@ export function createCodeSnap(source: string): Snapshot {
 
   function onIncludeTitleBarChange(event: Event): void {
     includeTitleBar = (event.currentTarget as HTMLInputElement).checked;
+  }
+
+  function onIncludeLineNumbersChange(event: Event): void {
+    includeLineNumbers = (event.currentTarget as HTMLInputElement).checked;
   }
 
   function onMarkdownPreviewChange(event: Event): void {
@@ -314,7 +337,7 @@ export function createCodeSnap(source: string): Snapshot {
 </svelte:head>
 
 <main class="app-shell">
-  <section bind:this={stageNode} class="stage" class:no-background={!includeBackground && !onlyCode} class:only-code={onlyCode} class:aurora={backdrop === 'aurora'} class:graphite={backdrop === 'graphite'} class:paper={backdrop === 'paper'} class:solid={backdrop === 'solid'} aria-label="Editable code snapshot">
+  <section bind:this={stageNode} class="stage" class:no-background={!includeBackground && !onlyCode} class:only-code={onlyCode} class:aurora={backdrop === 'aurora'} class:red={backdrop === 'red'} class:violet={backdrop === 'violet'} class:blue={backdrop === 'blue'} class:sunset={backdrop === 'sunset'} class:mint={backdrop === 'mint'} class:graphite={backdrop === 'graphite'} class:paper={backdrop === 'paper'} class:solid={backdrop === 'solid'} aria-label="Editable code snapshot">
     {#key backgroundMotionKey}
       {#if backgroundFlashMode}
         <span class={`stage-flash ${backgroundFlashBackdrop}`} class:out={backgroundFlashMode === 'out'} aria-hidden="true"></span>
@@ -322,7 +345,12 @@ export function createCodeSnap(source: string): Snapshot {
     {/key}
 
     {#key previewMotionKey}
-      <article class="code-window" class:only-code={onlyCode} bind:this={previewNode}>
+      <article
+        class="code-window"
+        class:only-code={onlyCode}
+        style={`--preview-lines: ${previewLineCount}; --preview-line-height: ${lineHeight};`}
+        bind:this={previewNode}
+      >
         {#if includeTitleBar && !onlyCode}
           <header class="window-bar" transition:terminalBar>
           <div class="traffic" aria-hidden="true">
@@ -348,23 +376,19 @@ export function createCodeSnap(source: string): Snapshot {
         {#if isMarkdownPreview}
           <MarkdownPreview value={code} {lineHeight} />
         {:else}
-          <CodeEditor value={code} language={activeLanguage} theme={editorTheme} {lineHeight} showLineNumbers={!onlyCode} onChange={updateCode} />
+          <CodeEditor value={code} language={activeLanguage} theme={editorTheme} {lineHeight} showLineNumbers={includeLineNumbers && !onlyCode} onChange={updateCode} />
         {/if}
       </article>
     {/key}
   </section>
 
   <aside class="controls" aria-label="Snapshot settings">
-    <div class="brand-row">
-      <strong>CodeSnap</strong>
-      {#if actionLabel}
-        <span data-state={exportState}>{actionLabel}</span>
-      {/if}
-    </div>
-
-    <div class="control-grid">
-      <label class="field-card">
-        <span>Language</span>
+    <div class="settings-stack">
+      <section class="control-section">
+        <div class="section-title">
+          <Code2 size={15} strokeWidth={2.25} aria-hidden="true" />
+          <span>Language</span>
+        </div>
         <CustomSelect
           value={languageChoice}
           options={languageSelectOptions}
@@ -372,75 +396,123 @@ export function createCodeSnap(source: string): Snapshot {
           on:change={(event) => onLanguageChange(event.detail.value)}
         />
         <small>Wrong language? Choose manually here.</small>
-      </label>
+      </section>
 
-      <label class="field-card">
-        <span>IDE theme</span>
+      <section class="control-section">
+        <div class="section-title">
+          <Palette size={15} strokeWidth={2.25} aria-hidden="true" />
+          <span>Theme</span>
+        </div>
         <CustomSelect
           value={editorTheme}
           options={themes}
           ariaLabel="Choose IDE theme"
           on:change={(event) => onThemeChange(event.detail.value)}
         />
-      </label>
-    </div>
+      </section>
 
-    <label class="field-card">
-      <span>Background</span>
-      <CustomSelect
-        value={backdrop}
-        options={backgrounds}
-        ariaLabel="Choose background"
-        on:change={(event) => onBackdropChange(event.detail.value as Backdrop)}
-      />
-    </label>
+      <section class="control-section">
+        <div class="section-title">
+          <ImageIcon size={15} strokeWidth={2.25} aria-hidden="true" />
+          <span>Background</span>
+        </div>
+        <div class="background-picker" on:wheel|nonpassive={onBackgroundWheel}>
+          <button class="swatch-arrow" type="button" aria-label="Previous backgrounds" disabled={!canMoveBackgroundsLeft} on:click={() => moveBackgrounds(-1)}>
+            <ChevronLeft size={16} strokeWidth={2.4} aria-hidden="true" />
+          </button>
+          <div class="background-swatches" role="radiogroup" aria-label="Choose background">
+            {#each visibleBackgrounds as item}
+              <button
+                class={`background-swatch ${item.value}`}
+                class:active={backdrop === item.value}
+                type="button"
+                role="radio"
+                aria-checked={backdrop === item.value}
+                aria-label={item.label}
+                on:click={() => onBackdropChange(item.value as Backdrop)}
+              >
+                <span aria-hidden="true"></span>
+              </button>
+            {/each}
+          </div>
+          <button class="swatch-arrow" type="button" aria-label="Next backgrounds" disabled={!canMoveBackgroundsRight} on:click={() => moveBackgrounds(1)}>
+            <ChevronRight size={16} strokeWidth={2.4} aria-hidden="true" />
+          </button>
+        </div>
+      </section>
 
-    <label class="range-label field-card">
-      <span>Line height (default 1.55) <strong>{lineHeight.toFixed(2)}</strong></span>
-      <input type="range" min="1.2" max="2" step="0.05" bind:value={lineHeight} />
-    </label>
-
-    {#if isMarkdown}
-      <label class="toggle-row">
-        <span>Markdown preview</span>
-        <span class="switch">
-          <input type="checkbox" checked={renderMarkdownPreview} on:change={onMarkdownPreviewChange} />
-          <span class="switch-track" aria-hidden="true">
-            <span class="switch-thumb"></span>
+      <section class="control-section range-label">
+        <div class="section-title split">
+          <span>
+            <SlidersHorizontal size={15} strokeWidth={2.25} aria-hidden="true" />
+            Line height
           </span>
-        </span>
-      </label>
-    {/if}
+          <strong>{lineHeight.toFixed(2)}</strong>
+        </div>
+        <input type="range" min="1.2" max="2" step="0.05" bind:value={lineHeight} />
+      </section>
 
-    <label class="toggle-row">
-      <span>Only code</span>
-      <span class="switch">
-        <input type="checkbox" checked={onlyCode} on:change={onOnlyCodeChange} />
-        <span class="switch-track" aria-hidden="true">
-          <span class="switch-thumb"></span>
-        </span>
-      </span>
-    </label>
+      <div class="settings-divider"></div>
 
-    <label class="toggle-row" class:disabled={onlyCode}>
-      <span>Include background</span>
-      <span class="switch">
-        <input type="checkbox" checked={includeBackground} on:change={onIncludeBackgroundChange} disabled={onlyCode} />
-        <span class="switch-track" aria-hidden="true">
-          <span class="switch-thumb"></span>
-        </span>
-      </span>
-    </label>
+      <section class="control-section toggle-section">
+        <div class="section-title">
+          <ToggleLeft size={15} strokeWidth={2.25} aria-hidden="true" />
+          <span>Window controls</span>
+        </div>
 
-    <label class="toggle-row" class:disabled={onlyCode}>
-      <span>Include title bar</span>
-      <span class="switch">
-        <input type="checkbox" checked={includeTitleBar} on:change={onIncludeTitleBarChange} disabled={onlyCode} />
-        <span class="switch-track" aria-hidden="true">
-          <span class="switch-thumb"></span>
-        </span>
-      </span>
-    </label>
+        {#if isMarkdown}
+          <label class="toggle-row">
+            <span>Markdown preview</span>
+            <span class="switch">
+              <input type="checkbox" checked={renderMarkdownPreview} on:change={onMarkdownPreviewChange} />
+              <span class="switch-track" aria-hidden="true">
+                <span class="switch-thumb"></span>
+              </span>
+            </span>
+          </label>
+        {/if}
+
+        <label class="toggle-row">
+          <span>Only code</span>
+          <span class="switch">
+            <input type="checkbox" checked={onlyCode} on:change={onOnlyCodeChange} />
+            <span class="switch-track" aria-hidden="true">
+              <span class="switch-thumb"></span>
+            </span>
+          </span>
+        </label>
+
+        <label class="toggle-row" class:disabled={onlyCode}>
+          <span>Include background</span>
+          <span class="switch">
+            <input type="checkbox" checked={includeBackground} on:change={onIncludeBackgroundChange} disabled={onlyCode} />
+            <span class="switch-track" aria-hidden="true">
+              <span class="switch-thumb"></span>
+            </span>
+          </span>
+        </label>
+
+        <label class="toggle-row" class:disabled={onlyCode}>
+          <span>Include title bar</span>
+          <span class="switch">
+            <input type="checkbox" checked={includeTitleBar} on:change={onIncludeTitleBarChange} disabled={onlyCode} />
+            <span class="switch-track" aria-hidden="true">
+              <span class="switch-thumb"></span>
+            </span>
+          </span>
+        </label>
+
+        <label class="toggle-row" class:disabled={onlyCode}>
+          <span>Line numbers</span>
+          <span class="switch">
+            <input type="checkbox" checked={includeLineNumbers} on:change={onIncludeLineNumbersChange} disabled={onlyCode} />
+            <span class="switch-track" aria-hidden="true">
+              <span class="switch-thumb"></span>
+            </span>
+          </span>
+        </label>
+      </section>
+    </div>
 
     <div class="actions">
       <button class="secondary" type="button" aria-label="Paste clipboard" on:click={loadClipboard}>
