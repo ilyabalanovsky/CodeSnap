@@ -1,0 +1,27 @@
+[package]
+name = "codesnap"
+version = "0.1.0"
+description = "A lightweight desktop utility for beautiful code screenshots."
+authors = ["CodeSnap"]
+edition = "2021"
+license = "GPL-3.0"
+
+[lib]
+name = "codesnap_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "codesnap"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2.5.1", features = [] }
+
+[dependencies]
+tauri = { version = "2.11.2", features = ["tray-icon"] }
+tauri-plugin-clipboard-manager = "2.3.2"
+tauri-plugin-dialog = "2.7.1"
+tauri-plugin-global-shortcut = "2.3.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+base64 = "0.22"

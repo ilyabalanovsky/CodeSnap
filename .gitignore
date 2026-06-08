@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Frontend build output
+dist/
+
+# Tauri/Rust build output and generated schemas
+src-tauri/target/
+src-tauri/gen/
+
+# Logs and temporary files
+*.log
+*.tmp
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Tool caches and reports
+.vite/
+coverage/
+playwright-report/
+test-results/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini

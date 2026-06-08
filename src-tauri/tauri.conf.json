@@ -1,0 +1,35 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "CodeSnap",
+  "version": "0.1.0",
+  "identifier": "dev.codesnap.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://127.0.0.1:1420",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "CodeSnap",
+        "width": 1120,
+        "height": 760,
+        "minWidth": 760,
+        "minHeight": 560,
+        "resizable": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": false,
+    "targets": [],
+    "category": "DeveloperTool",
+    "shortDescription": "Beautiful code screenshots for desktop.",
+    "longDescription": "CodeSnap creates professional PNG screenshots of selected code from a lightweight Tauri desktop app."
+  }
+}
