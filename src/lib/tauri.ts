@@ -1,5 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
 
+function isTauriRuntime(): boolean {
+  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+}
+
 export async function getClipboardText(): Promise<string> {
   try {
     return await invoke<string>('get_clipboard_text');
@@ -38,5 +42,43 @@ export async function hideToTray(): Promise<void> {
     await invoke('hide_to_tray');
   } catch {
     // Browser preview mode does not expose Tauri commands.
+  }
+}
+
+export type AppSettings = {
+  captureHotkey: string;
+  launchAtLogin: boolean;
+  startInTray: boolean;
+  disableAnimations: boolean;
+};
+
+export const defaultAppSettings: AppSettings = {
+  captureHotkey: 'Ctrl+Shift+S',
+  launchAtLogin: false,
+  startInTray: false,
+  disableAnimations: false,
+};
+
+export async function getAppSettings(): Promise<AppSettings> {
+  try {
+    return await invoke<AppSettings>('get_app_settings');
+  } catch (error) {
+    if (isTauriRuntime()) {
+      throw error;
+    }
+
+    return defaultAppSettings;
+  }
+}
+
+export async function setAppSettings(settings: AppSettings): Promise<AppSettings> {
+  try {
+    return await invoke<AppSettings>('set_app_settings', { settings });
+  } catch (error) {
+    if (isTauriRuntime()) {
+      throw error;
+    }
+
+    return settings;
   }
 }

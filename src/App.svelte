@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { ChevronLeft, ChevronRight, Clipboard, Code2, Copy, ImageIcon, Palette, Save, SlidersHorizontal, ToggleLeft } from '@lucide/svelte';
+  import { ChevronLeft, ChevronRight, Clipboard, Code2, Copy, ImageIcon, Keyboard, Palette, Save, Settings as SettingsIcon, SlidersHorizontal, ToggleLeft, X } from '@lucide/svelte';
   import { onMount, tick } from 'svelte';
   import { listen, type UnlistenFn } from '@tauri-apps/api/event';
   import CodeEditor from './lib/CodeEditor.svelte';
   import CustomSelect from './lib/CustomSelect.svelte';
   import MarkdownPreview from './lib/MarkdownPreview.svelte';
   import { detectLanguageFromCode, extensionForLanguage, languageOptions } from './lib/languages';
-  import { copySnapshotPng, getClipboardText, hideToTray, saveSnapshotPng } from './lib/tauri';
+  import { copySnapshotPng, defaultAppSettings, getAppSettings, getClipboardText, hideToTray, saveSnapshotPng, setAppSettings, type AppSettings } from './lib/tauri';
   import { copyDataUrlToClipboard, renderNodeToPngDataUrl } from './lib/snapshot';
 
   type Backdrop = 'aurora' | 'red' | 'violet' | 'blue' | 'sunset' | 'mint' | 'graphite' | 'paper' | 'solid';
@@ -17,6 +17,8 @@
   };
 
   const codeCapturedEvent = 'codesnap://code-captured';
+  const uiHiddenEvent = 'codesnap://ui-hidden';
+  const uiShownEvent = 'codesnap://ui-shown';
 
   const sampleCode = `type Mood = "focused" | "curious" | "slightly-caffeinated";
 
@@ -80,6 +82,12 @@ export function createCodeSnap(source: string): Snapshot {
   let backgroundFlashBackdrop: Backdrop = backdrop;
   let backgroundFlashTimer: number | undefined;
   let backgroundOffset = 0;
+  let appSettings: AppSettings = defaultAppSettings;
+  let isSettingsOpen = false;
+  let isHotkeyOpen = false;
+  let hotkeyDraft = defaultAppSettings.captureHotkey;
+  let settingsError = '';
+  let isUiSuspended = false;
 
   $: isBusy = exportState === 'saving' || exportState === 'copying';
   $: detectedLanguage = detectLanguageFromCode(code);
@@ -100,6 +108,111 @@ export function createCodeSnap(source: string): Snapshot {
   }
   function updateCode(nextCode: string): void {
     code = nextCode;
+  }
+
+  function openSettings(): void {
+    settingsError = '';
+    isSettingsOpen = true;
+  }
+
+  function closeSettings(): void {
+    isSettingsOpen = false;
+    isHotkeyOpen = false;
+    settingsError = '';
+  }
+
+  function openHotkeySettings(): void {
+    hotkeyDraft = appSettings.captureHotkey;
+    settingsError = '';
+    isHotkeyOpen = true;
+  }
+
+  function closeHotkeySettings(): void {
+    isHotkeyOpen = false;
+    settingsError = '';
+  }
+
+  function normalizeKeyName(key: string): string {
+    if (key === ' ') {
+      return 'Space';
+    }
+
+    if (key === 'Escape') {
+      return 'Esc';
+    }
+
+    if (key.length === 1) {
+      return key.toUpperCase();
+    }
+
+    return key.replace(/^Arrow/, '');
+  }
+
+  function hotkeyFromEvent(event: KeyboardEvent): string {
+    const parts: string[] = [];
+
+    if (event.ctrlKey) {
+      parts.push('Ctrl');
+    }
+
+    if (event.altKey) {
+      parts.push('Alt');
+    }
+
+    if (event.shiftKey) {
+      parts.push('Shift');
+    }
+
+    if (event.metaKey) {
+      parts.push('Super');
+    }
+
+    if (!['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) {
+      parts.push(normalizeKeyName(event.key));
+    }
+
+    return parts.join('+');
+  }
+
+  function isCompleteHotkey(hotkey: string): boolean {
+    const parts = hotkey.split('+').filter(Boolean);
+    const hasModifier = parts.some((part) => ['Ctrl', 'Alt', 'Shift', 'Super'].includes(part));
+
+    return hasModifier && parts.length >= 2;
+  }
+
+  function onHotkeyCapture(event: KeyboardEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const nextHotkey = hotkeyFromEvent(event);
+
+    if (nextHotkey) {
+      hotkeyDraft = nextHotkey;
+      settingsError = '';
+    }
+  }
+
+  async function saveHotkeySettings(): Promise<void> {
+    if (!isCompleteHotkey(hotkeyDraft)) {
+      settingsError = 'Press a shortcut with at least one modifier.';
+      return;
+    }
+
+    await updateAppSettings({ captureHotkey: hotkeyDraft });
+    isHotkeyOpen = false;
+  }
+
+  async function updateAppSettings(patch: Partial<AppSettings>): Promise<void> {
+    const nextSettings = { ...appSettings, ...patch };
+
+    settingsError = '';
+
+    try {
+      appSettings = await setAppSettings(nextSettings);
+    } catch (error) {
+      settingsError = error instanceof Error ? error.message : String(error || 'Could not save settings.');
+    }
   }
 
   function cuePreviewMotion(): void {
@@ -347,7 +460,15 @@ export function createCodeSnap(source: string): Snapshot {
   onMount(() => {
     let unlisten: UnlistenFn | undefined;
 
-    void listen<CapturedCodePayload>(codeCapturedEvent, (event) => {
+    void getAppSettings().then((settings) => {
+      appSettings = settings;
+      hotkeyDraft = settings.captureHotkey;
+      isUiSuspended = settings.startInTray && document.visibilityState === 'hidden';
+    });
+
+    const listeners: Promise<UnlistenFn>[] = [];
+
+    listeners.push(listen<CapturedCodePayload>(codeCapturedEvent, (event) => {
       const nextCode = event.payload.code;
 
       if (!nextCode.trim()) {
@@ -357,9 +478,20 @@ export function createCodeSnap(source: string): Snapshot {
       code = nextCode;
       languageChoice = '__auto';
       cuePreviewMotion();
-    })
-      .then((nextUnlisten) => {
-        unlisten = nextUnlisten;
+      isUiSuspended = false;
+    }));
+
+    listeners.push(listen(uiHiddenEvent, () => {
+      isUiSuspended = true;
+    }));
+
+    listeners.push(listen(uiShownEvent, () => {
+      isUiSuspended = false;
+    }));
+
+    void Promise.all(listeners)
+      .then((unlisteners) => {
+        unlisten = () => unlisteners.forEach((item) => item());
       })
       .catch(() => {
         // Browser preview mode does not expose Tauri events.
@@ -375,7 +507,7 @@ export function createCodeSnap(source: string): Snapshot {
   <title>CodeSnap</title>
 </svelte:head>
 
-<main class="app-shell">
+<main class="app-shell" class:ui-suspended={isUiSuspended} class:motion-disabled={appSettings.disableAnimations}>
   <section bind:this={stageNode} class="stage" class:no-background={!includeBackground && !onlyCode} class:only-code={onlyCode} class:aurora={backdrop === 'aurora'} class:red={backdrop === 'red'} class:violet={backdrop === 'violet'} class:blue={backdrop === 'blue'} class:sunset={backdrop === 'sunset'} class:mint={backdrop === 'mint'} class:graphite={backdrop === 'graphite'} class:paper={backdrop === 'paper'} class:solid={backdrop === 'solid'} aria-label="Editable code snapshot">
     {#key backgroundMotionKey}
       {#if backgroundFlashMode}
@@ -424,9 +556,14 @@ export function createCodeSnap(source: string): Snapshot {
   <aside class="controls" aria-label="Snapshot settings">
     <div class="settings-stack">
       <section class="control-section">
-        <div class="section-title">
-          <Code2 size={15} strokeWidth={2.25} aria-hidden="true" />
-          <span>Language</span>
+        <div class="section-title title-with-action">
+          <span>
+            <Code2 size={15} strokeWidth={2.25} aria-hidden="true" />
+            Language
+          </span>
+          <button class="settings-trigger" type="button" aria-label="Open settings" on:click={openSettings}>
+            <SettingsIcon size={15} strokeWidth={2.35} aria-hidden="true" />
+          </button>
         </div>
         <CustomSelect
           value={languageChoice}
@@ -570,3 +707,122 @@ export function createCodeSnap(source: string): Snapshot {
     </div>
   </aside>
 </main>
+
+{#if isSettingsOpen}
+  <div class="modal-backdrop" role="presentation" on:click={closeSettings}>
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" tabindex="-1" on:click|stopPropagation on:keydown|stopPropagation>
+      <header class="modal-header">
+        <div>
+          <span class="modal-kicker">CodeSnap</span>
+          <h2 id="settings-title">Settings</h2>
+        </div>
+        <button class="modal-close" type="button" aria-label="Close settings" on:click={closeSettings}>
+          <X size={18} strokeWidth={2.35} aria-hidden="true" />
+        </button>
+      </header>
+
+      <div class="modal-content">
+        <div class="setting-line hotkey-line">
+          <div>
+            <strong>Capture hotkey</strong>
+            <span>{appSettings.captureHotkey}</span>
+          </div>
+          <button class="mini-action" type="button" on:click={openHotkeySettings}>
+            <Keyboard size={15} strokeWidth={2.25} aria-hidden="true" />
+            Change
+          </button>
+        </div>
+
+        <label class="setting-line">
+          <span>
+            <strong>Launch at login</strong>
+            <small>Start CodeSnap together with the system.</small>
+          </span>
+          <span class="switch">
+            <input
+              type="checkbox"
+              checked={appSettings.launchAtLogin}
+              on:change={(event) => updateAppSettings({ launchAtLogin: (event.currentTarget as HTMLInputElement).checked })}
+            />
+            <span class="switch-track" aria-hidden="true">
+              <span class="switch-thumb"></span>
+            </span>
+          </span>
+        </label>
+
+        <label class="setting-line">
+          <span>
+            <strong>Start in tray</strong>
+            <small>Keep the window hidden until the hotkey is pressed.</small>
+          </span>
+          <span class="switch">
+            <input
+              type="checkbox"
+              checked={appSettings.startInTray}
+              on:change={(event) => updateAppSettings({ startInTray: (event.currentTarget as HTMLInputElement).checked })}
+            />
+            <span class="switch-track" aria-hidden="true">
+              <span class="switch-thumb"></span>
+            </span>
+          </span>
+        </label>
+
+        <label class="setting-line">
+          <span>
+            <strong>Disable animations</strong>
+            <small>For maximum performance and the quietest background usage.</small>
+          </span>
+          <span class="switch">
+            <input
+              type="checkbox"
+              checked={appSettings.disableAnimations}
+              on:change={(event) => updateAppSettings({ disableAnimations: (event.currentTarget as HTMLInputElement).checked })}
+            />
+            <span class="switch-track" aria-hidden="true">
+              <span class="switch-thumb"></span>
+            </span>
+          </span>
+        </label>
+
+        {#if settingsError}
+          <p class="settings-error">{settingsError}</p>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
+
+{#if isHotkeyOpen}
+  <div class="modal-backdrop hotkey-backdrop" role="presentation" on:click={closeHotkeySettings}>
+    <div class="settings-modal hotkey-modal" role="dialog" aria-modal="true" aria-labelledby="hotkey-title" tabindex="-1" on:click|stopPropagation on:keydown|stopPropagation>
+      <header class="modal-header">
+        <div>
+          <span class="modal-kicker">Shortcut</span>
+          <h2 id="hotkey-title">Press new hotkey</h2>
+        </div>
+        <button class="modal-close" type="button" aria-label="Close hotkey settings" on:click={closeHotkeySettings}>
+          <X size={18} strokeWidth={2.35} aria-hidden="true" />
+        </button>
+      </header>
+
+      <div class="modal-content">
+        <input
+          class="hotkey-input"
+          aria-label="New capture hotkey"
+          readonly
+          value={hotkeyDraft}
+          on:keydown={onHotkeyCapture}
+          on:focus={(event) => (event.currentTarget as HTMLInputElement).select()}
+        />
+        <small class="hotkey-hint">Use a modifier combo, for example Ctrl+Shift+S.</small>
+        {#if settingsError}
+          <p class="settings-error">{settingsError}</p>
+        {/if}
+        <div class="modal-actions">
+          <button class="mini-action ghost" type="button" on:click={closeHotkeySettings}>Cancel</button>
+          <button class="mini-action" type="button" disabled={!isCompleteHotkey(hotkeyDraft)} on:click={saveHotkeySettings}>Save hotkey</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
