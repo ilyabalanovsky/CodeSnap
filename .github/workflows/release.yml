@@ -21,9 +21,6 @@ jobs:
           - os: windows-latest
             label: windows-x64
             artifact_name: CodeSnap-windows-x64.zip
-          - os: macos-13
-            label: macos-x64
-            artifact_name: CodeSnap-macos-x64.tar.gz
           - os: macos-14
             label: macos-arm64
             artifact_name: CodeSnap-macos-arm64.tar.gz
@@ -53,7 +50,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Setup Rust
