@@ -24,22 +24,15 @@
   const uiHiddenEvent = 'codesnap://ui-hidden';
   const uiShownEvent = 'codesnap://ui-shown';
 
-  const sampleCode = `type Mood = "focused" | "curious" | "slightly-caffeinated";
+  const sampleCode = `const code = "it works";
 
-type Snapshot = {
-  language: "typescript" | "rust" | "python";
-  mood: Mood;
-  scale: 2;
-};
+if (code === "it works") {
+  console.log("do not touch it");
+} else {
+  console.log("call a senior dev");
+}
 
-export function createCodeSnap(source: string): Snapshot {
-  const mood = source.includes("TODO") ? "curious" : "focused";
-  return renderSnapshot(source, {
-    theme: "darcula",
-    mood,
-    snacks: "optional",
-  });
-}`;
+// TODO: figure out why it works`;
 
   const themes = [
     { value: 'darcula', label: 'Darcula' },
