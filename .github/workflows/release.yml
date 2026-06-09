@@ -64,11 +64,8 @@ jobs:
       - name: Install frontend dependencies
         run: npm install
 
-      - name: Build frontend
-        run: npm run build
-
       - name: Build desktop binary
-        run: cargo build --release --manifest-path src-tauri/Cargo.toml
+        run: npm run tauri build
 
       - name: Package Windows binary
         if: runner.os == 'Windows'
