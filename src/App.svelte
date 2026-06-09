@@ -15,6 +15,10 @@
     code: string;
     source: string;
   };
+  type LanguageBadge = {
+    label: string;
+    className: string;
+  };
 
   const codeCapturedEvent = 'codesnap://code-captured';
   const uiHiddenEvent = 'codesnap://ui-hidden';
@@ -39,10 +43,22 @@ export function createCodeSnap(source: string): Snapshot {
 
   const themes = [
     { value: 'darcula', label: 'Darcula' },
+    { value: 'dracula', label: 'Dracula' },
     { value: 'githubDark', label: 'GitHub Dark' },
     { value: 'githubLight', label: 'GitHub Light' },
     { value: 'materialDark', label: 'Material Dark' },
+    { value: 'monokai', label: 'Monokai' },
+    { value: 'nord', label: 'Nord' },
     { value: 'oneDark', label: 'One Dark' },
+    { value: 'tokyoNight', label: 'Tokyo Night' },
+    { value: 'vscodeDark', label: 'VS Code Dark' },
+    { value: 'atomone', label: 'Atom One' },
+    { value: 'sublime', label: 'Sublime' },
+    { value: 'solarizedDark', label: 'Solarized Dark' },
+    { value: 'solarizedLight', label: 'Solarized Light' },
+    { value: 'xcodeDark', label: 'Xcode Dark' },
+    { value: 'xcodeLight', label: 'Xcode Light' },
+    { value: 'quietlight', label: 'Quiet Light' },
   ];
 
   const backgrounds = [
@@ -56,6 +72,27 @@ export function createCodeSnap(source: string): Snapshot {
     { value: 'paper', label: 'Paper' },
     { value: 'solid', label: 'Solid' },
   ];
+
+  const languageBadges: Record<string, LanguageBadge> = {
+    'C': { label: 'C', className: 'c' },
+    'C#': { label: 'C#', className: 'csharp' },
+    'C++': { label: 'C++', className: 'cpp' },
+    'CSS': { label: 'CSS', className: 'css' },
+    'Go': { label: 'GO', className: 'go' },
+    'HTML': { label: '<>', className: 'html' },
+    'Java': { label: 'JV', className: 'java' },
+    'JavaScript': { label: 'JS', className: 'javascript' },
+    'JSON': { label: '{}', className: 'json' },
+    'Markdown': { label: 'MD', className: 'markdown' },
+    'PHP': { label: 'PHP', className: 'php' },
+    'Plain Text': { label: 'TXT', className: 'text' },
+    'Python': { label: 'PY', className: 'python' },
+    'Rust': { label: 'RS', className: 'rust' },
+    'Shell': { label: '$', className: 'shell' },
+    'SQL': { label: 'SQL', className: 'sql' },
+    'TypeScript': { label: 'TS', className: 'typescript' },
+    'YAML': { label: 'YML', className: 'yaml' },
+  };
 
   let code = sampleCode;
   let languageChoice = '__auto';
@@ -100,6 +137,7 @@ export function createCodeSnap(source: string): Snapshot {
   $: isMarkdownPreview = isMarkdown && renderMarkdownPreview;
   $: previewLineCount = Math.max(1, code.split('\n').length);
   $: fileExtension = extensionForLanguage(activeLanguage);
+  $: fileTabBadge = badgeForLanguage(activeLanguage, fileExtension);
   $: if (fileExtension !== lastLanguageExtension) {
     if (fileName === `snippet.${lastLanguageExtension}` || fileName === 'snippet') {
       fileName = `snippet.${fileExtension}`;
@@ -108,6 +146,22 @@ export function createCodeSnap(source: string): Snapshot {
   }
   function updateCode(nextCode: string): void {
     code = nextCode;
+  }
+
+  function badgeForLanguage(languageName: string, extension: string): LanguageBadge {
+    const knownBadge = languageBadges[languageName];
+
+    if (knownBadge) {
+      return knownBadge;
+    }
+
+    const safeExtension = extension.replace(/[^a-z0-9#+]/gi, '').slice(0, 3).toUpperCase();
+    const className = languageName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'generic';
+
+    return {
+      label: safeExtension || 'CODE',
+      className: `generic ${className}`,
+    };
   }
 
   function openSettings(): void {
@@ -431,7 +485,7 @@ export function createCodeSnap(source: string): Snapshot {
     await tick();
 
     try {
-      const exportNode = includeBackground && !onlyCode ? stageNode : previewNode;
+      const exportNode = onlyCode || !includeBackground ? previewNode : stageNode;
       const dataUrl = await renderNodeToPngDataUrl(exportNode);
 
       if (action === 'save') {
@@ -524,23 +578,26 @@ export function createCodeSnap(source: string): Snapshot {
       >
         {#if includeTitleBar && !onlyCode}
           <header class="window-bar" transition:terminalBar>
-          <div class="traffic" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          {#if isEditingFileName}
-            <input
-              class="file-name-input"
-              aria-label="File name"
-              bind:this={fileNameInput}
-              bind:value={draftFileName}
-              on:blur={commitFileName}
-              on:keydown={onFileNameKeydown}
-            />
-          {:else}
-            <button class="file-label" type="button" on:click={startFileNameEdit}>{fileName || `snippet.${fileExtension}`}</button>
-          {/if}
+            <div class="traffic" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="file-tab">
+              <span class={`file-tab-icon ${fileTabBadge.className}`} aria-hidden="true">{fileTabBadge.label}</span>
+              {#if isEditingFileName}
+                <input
+                  class="file-name-input"
+                  aria-label="File name"
+                  bind:this={fileNameInput}
+                  bind:value={draftFileName}
+                  on:blur={commitFileName}
+                  on:keydown={onFileNameKeydown}
+                />
+              {:else}
+                <button class="file-label" type="button" on:click={startFileNameEdit}>{fileName || `snippet.${fileExtension}`}</button>
+              {/if}
+            </div>
           </header>
         {/if}
 

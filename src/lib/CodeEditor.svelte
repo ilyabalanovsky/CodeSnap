@@ -8,9 +8,19 @@
   import { EditorView, drawSelection, dropCursor, highlightSpecialChars, keymap, lineNumbers, rectangularSelection } from '@codemirror/view';
   import { languages as codeMirrorLanguages } from '@codemirror/language-data';
   import { oneDark } from '@codemirror/theme-one-dark';
+  import { atomone } from '@uiw/codemirror-theme-atomone';
   import { darcula } from '@uiw/codemirror-theme-darcula';
+  import { dracula } from '@uiw/codemirror-theme-dracula';
   import { githubDark, githubLight } from '@uiw/codemirror-theme-github';
   import { materialDark } from '@uiw/codemirror-theme-material';
+  import { monokai } from '@uiw/codemirror-theme-monokai';
+  import { nord } from '@uiw/codemirror-theme-nord';
+  import { quietlight } from '@uiw/codemirror-theme-quietlight';
+  import { solarizedDark, solarizedLight } from '@uiw/codemirror-theme-solarized';
+  import { sublime } from '@uiw/codemirror-theme-sublime';
+  import { tokyoNight } from '@uiw/codemirror-theme-tokyo-night';
+  import { vscodeDark } from '@uiw/codemirror-theme-vscode';
+  import { xcodeDark, xcodeLight } from '@uiw/codemirror-theme-xcode';
 
   export let value = '';
   export let language = 'typescript';
@@ -30,11 +40,23 @@
   const lineHeightCompartment = new Compartment();
 
   const themeExtensions: Record<string, Extension> = {
+    atomone,
     darcula,
+    dracula,
     githubDark,
     githubLight,
     materialDark,
+    monokai,
+    nord,
     oneDark,
+    quietlight,
+    solarizedDark,
+    solarizedLight,
+    sublime,
+    tokyoNight,
+    vscodeDark,
+    xcodeDark,
+    xcodeLight,
   };
 
   function editorSetup(withLineNumbers: boolean): Extension {

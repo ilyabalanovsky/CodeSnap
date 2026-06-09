@@ -5,6 +5,7 @@
   export type SelectOption = {
     value: string;
     label: string;
+    excludeFromTypeahead?: boolean;
   };
 
   export let value: string;
@@ -128,7 +129,7 @@
       typeahead = '';
     }, 620);
 
-    const nextIndex = options.findIndex((option) => option.label.toLowerCase().startsWith(typeahead));
+    const nextIndex = options.findIndex((option) => !option.excludeFromTypeahead && option.label.toLowerCase().startsWith(typeahead));
 
     if (nextIndex >= 0) {
       activeIndex = nextIndex;

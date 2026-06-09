@@ -4,12 +4,14 @@ export type LanguageOption = {
   value: string;
   label: string;
   extension: string;
+  excludeFromTypeahead?: boolean;
 };
 
 export const plainTextLanguage = {
   value: 'Plain Text',
-  label: 'Plain Text',
+  label: 'Text',
   extension: 'txt',
+  excludeFromTypeahead: true,
 };
 
 export const languageOptions: LanguageOption[] = [
