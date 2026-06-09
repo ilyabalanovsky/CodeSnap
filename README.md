@@ -1,56 +1,122 @@
 # CodeSnap
 
-CodeSnap turns code into clean PNG snapshots without sending anything to a website.
+Beautiful code screenshots, straight from your desktop.
 
-Paste a snippet, pick a theme, tweak the frame, save the image or copy it straight to the clipboard. That is the whole idea. Fast, local, and built for the moments when you want to show code without apologizing for how it looks.
+CodeSnap is a lightweight desktop app for turning code snippets into polished PNG images. It is a fast, offline alternative to web tools like Carbon.now.sh, built for developers who share code in documentation, presentations, blog posts, social media, chats, pull requests, and bug reports.
 
-## Why it exists
+No upload. No browser tab. No reformatting the same snippet five times. Just select code, press a hotkey, and get a clean image that looks ready to publish.
 
-Sharing code should not mean opening a browser tab, pasting into a web tool, choosing the same theme again, adjusting padding by hand, downloading an image, then dragging it back into a chat.
+## Preview
 
-CodeSnap keeps that flow on your machine. It is a small desktop app for screenshots of code: the kind you put in documentation, pull request notes, Discord messages, Telegram chats, blog posts, slides, and issue reports.
+Add the main app screenshot here:
 
-## What it feels like
+![CodeSnap main screen](./assets/codesnap-main-screen.png)
 
-You open CodeSnap and get a focused editor with a live preview. The code is editable right in the main window, so small fixes do not require jumping back to another app.
+## Why CodeSnap
 
-The preview can look like a framed terminal window, a clean code block, or a full composition with background. If you only want the code, switch on `Only code` and CodeSnap strips everything else away.
+Code looks great in your editor. Then you paste it into a chat, a slide deck, a README, or a social post, and suddenly it looks like it fell down the stairs.
 
-For the fastest flow, keep CodeSnap in the tray. Select code anywhere, press `Ctrl+Shift+S`, and the app opens with that snippet already loaded.
+CodeSnap fixes that small but very real developer annoyance. It gives you a native code screenshot tool that keeps the workflow local, fast, and repeatable.
 
-## Features
+Use it when you need:
 
-- Editable CodeMirror editor in the preview area.
-- System tray workflow with quick show, capture, and quit actions.
-- Global hotkey capture: select code anywhere and press `Ctrl+Shift+S`.
-- Automatic language detection with manual override.
-- Support for the CodeMirror language catalog, including 140+ languages and plain text.
-- IDE style themes: Darcula, GitHub Dark, GitHub Light, Material Dark, and One Dark.
-- Markdown preview mode for Markdown snippets.
-- Optional title bar with editable file name.
-- Optional background, including solid and gradient styles.
-- `Only code` mode for exporting just the snippet.
-- Line height control for better readability.
-- Save as PNG or copy the image to the clipboard.
-- Local desktop workflow. Your code does not need to leave your computer.
+- A crisp code screenshot for a technical presentation.
+- A clean snippet image for X, LinkedIn, Telegram, Discord, or a blog post.
+- A polished code block for documentation, tutorials, course material, and release notes.
+- A readable bug report screenshot without losing syntax highlighting.
+- A local Carbon.now.sh alternative that works offline.
+- A quick way to copy selected code into a beautiful PNG without opening a website.
+
+## How It Works
+
+1. Select code in your editor, terminal, browser, or docs.
+2. Press the global capture hotkey.
+3. CodeSnap opens with the snippet already loaded.
+4. Pick a language, IDE theme, background, title bar, line height, and export mode.
+5. Save the PNG or copy the image directly to your clipboard.
+
+For quick edits, the code stays editable right inside the preview. Fix a typo, rename the file tab, change the language, switch themes, export, done.
+
+## Highlights
+
+- **Instant code screenshots**  
+  Capture selected text with a hotkey and turn it into a PNG in seconds.
+
+- **Local-first and offline**  
+  Your code is rendered on your machine. No online screenshot service is required.
+
+- **Professional syntax highlighting**  
+  Powered by CodeMirror with automatic language detection and manual override.
+
+- **Large language catalog**  
+  Supports the CodeMirror language catalog, including 140+ languages and plain text.
+
+- **Popular IDE themes**  
+  Includes Darcula, Dracula, GitHub Dark, GitHub Light, Material Dark, Monokai, Nord, One Dark, Tokyo Night, VS Code Dark, Atom One, Sublime, Solarized, Xcode, and Quiet Light.
+
+- **Markdown preview**  
+  Render Markdown as a real preview instead of plain text when you want documentation-style screenshots.
+
+- **Presentation-ready backgrounds**  
+  Choose from solid colors and polished gradients for slides, posts, docs, and landing pages.
+
+- **Only Code mode**  
+  Export just the code block without the surrounding background or window chrome.
+
+- **Editable file tab**  
+  Rename the title in the code window so your screenshot looks intentional.
+
+- **Tray workflow**  
+  Keep CodeSnap in the system tray and bring it up only when you need it.
+
+- **Save or copy**  
+  Export to PNG or copy the image straight to the clipboard for quick sharing.
+
+## Built For Real Developer Sharing
+
+CodeSnap is useful anywhere code needs to look sharp outside the editor.
+
+### Social Posts
+
+Post readable code snippets without fighting formatting, screenshots, or browser-based design tools. Great for short tips, bug stories, release announcements, and “today I learned” posts.
+
+### Presentations
+
+Drop clean code images into slides without blurry editor screenshots, awkward crops, or giant UI panels around the snippet.
+
+### Documentation
+
+Make examples easier to scan in READMEs, docs pages, tutorials, changelogs, and internal knowledge bases.
+
+### Chat and Support
+
+Send readable snippets in Discord, Slack, Telegram, GitHub issues, and support threads without losing syntax highlighting.
+
+### Blog Posts and Tutorials
+
+Create consistent code cards for technical writing, courses, walkthroughs, and product updates.
+
+## Why Not Just Use a Website?
+
+Web-based code screenshot tools are great until they slow down your flow:
+
+- You need to open a site.
+- You paste code into a browser.
+- You reselect theme, background, padding, and language.
+- You download the image.
+- You drag it back into the place where you actually needed it.
+
+CodeSnap keeps that workflow on your desktop. It is faster, private by default, available offline, and designed to sit quietly in the tray until your hotkey calls it.
 
 ## Download
 
-Get the latest version from the [Releases page](../../releases/latest).
+Get the latest build from the [Releases page](../../releases/latest).
 
-Download the build for your operating system, run CodeSnap, and start making snapshots.
-
-## Good for
-
-- Sharing snippets in chat without losing formatting.
-- Making documentation examples look polished.
-- Preparing images for blog posts and social posts.
-- Sending bug reports with readable code.
-- Creating small code cards for talks, lessons, and notes.
+Download CodeSnap for your operating system, run it, select some code, and make your first screenshot.
 
 ## Privacy
 
-CodeSnap is a desktop app. It renders snapshots locally and does not need an online screenshot service.
+CodeSnap renders your code screenshots locally. Your snippets do not need to be uploaded to a website to become beautiful images.
 
 ## License
 
