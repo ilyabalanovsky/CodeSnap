@@ -8,8 +8,6 @@ No upload. No browser tab. No reformatting the same snippet five times. Just sel
 
 ## Preview
 
-Add the main app screenshot here:
-
 ![CodeSnap main screen](./assets/codesnap-main-screen.png)
 
 ## Why CodeSnap
