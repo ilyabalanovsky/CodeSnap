@@ -50,6 +50,7 @@ export type AppSettings = {
   launchAtLogin: boolean;
   startInTray: boolean;
   disableAnimations: boolean;
+  welcomeCompleted: boolean;
 };
 
 export const defaultAppSettings: AppSettings = {
@@ -57,6 +58,7 @@ export const defaultAppSettings: AppSettings = {
   launchAtLogin: false,
   startInTray: false,
   disableAnimations: false,
+  welcomeCompleted: false,
 };
 
 export async function getAppSettings(): Promise<AppSettings> {

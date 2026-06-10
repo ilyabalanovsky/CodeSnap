@@ -121,6 +121,60 @@ button {
     padding 380ms var(--ease-snap);
 }
 
+.snapshot-export-frame {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  isolation: isolate;
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  padding: var(--export-padding, 80px);
+  overflow: hidden;
+  background: #3356b5;
+  pointer-events: none;
+}
+
+.snapshot-export-frame::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(115deg, transparent 0 22%, rgba(255, 255, 255, 0.22) 34%, transparent 48%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 22px);
+  content: "";
+  mix-blend-mode: soft-light;
+  opacity: 0.52;
+  pointer-events: none;
+  transform: translateX(3%) skewX(-6deg);
+}
+
+.snapshot-export-frame > .snapshot-export-clone {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  max-width: none;
+  animation: none !important;
+  transform: none !important;
+}
+
+.snapshot-export-clone,
+.snapshot-export-clone *,
+.snapshot-export-clone::before,
+.snapshot-export-clone::after,
+.snapshot-export-clone *::before,
+.snapshot-export-clone *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+.snapshot-export-clone .traffic span,
+.snapshot-export-clone .file-tab-icon {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
 .stage::-webkit-scrollbar {
   display: none;
 }
@@ -211,7 +265,8 @@ button {
   animation-name: background-fill-out;
 }
 
-.stage.aurora {
+.stage.aurora,
+.snapshot-export-frame.aurora {
   background:
     linear-gradient(135deg, rgba(51, 86, 181, 0.92), rgba(45, 141, 117, 0.78) 48%, rgba(232, 185, 87, 0.72)),
     #3356b5;
@@ -219,49 +274,57 @@ button {
   animation: aurora-breath 16s ease-in-out infinite;
 }
 
-.stage.red {
+.stage.red,
+.snapshot-export-frame.red {
   background: linear-gradient(135deg, #4a0038, #a10054 45%, #e2435f 72%, #ff8c6b);
   background-size: 220% 220%;
   animation: aurora-breath 15s ease-in-out infinite;
 }
 
-.stage.violet {
+.stage.violet,
+.snapshot-export-frame.violet {
   background: linear-gradient(135deg, #2b1055, #7b2ff7 52%, #f107a3);
   background-size: 220% 220%;
   animation: aurora-breath 15s ease-in-out infinite;
 }
 
-.stage.blue {
+.stage.blue,
+.snapshot-export-frame.blue {
   background: linear-gradient(135deg, #1238a8, #2299e9 48%, #25d4c8);
   background-size: 220% 220%;
   animation: aurora-breath 15s ease-in-out infinite;
 }
 
-.stage.sunset {
+.stage.sunset,
+.snapshot-export-frame.sunset {
   background: linear-gradient(135deg, #f97316, #db2777 52%, #7c3aed);
   background-size: 220% 220%;
   animation: aurora-breath 15s ease-in-out infinite;
 }
 
-.stage.mint {
+.stage.mint,
+.snapshot-export-frame.mint {
   background: linear-gradient(135deg, #0f766e, #22c55e 48%, #d9f99d);
   background-size: 220% 220%;
   animation: aurora-breath 15s ease-in-out infinite;
 }
 
-.stage.graphite {
+.stage.graphite,
+.snapshot-export-frame.graphite {
   background:
     radial-gradient(circle at top left, rgba(122, 139, 162, 0.38), transparent 38%),
     linear-gradient(135deg, #222831, #111315 70%);
 }
 
-.stage.paper {
+.stage.paper,
+.snapshot-export-frame.paper {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(229, 223, 211, 0.84)),
     #ece6db;
 }
 
-.stage.solid {
+.stage.solid,
+.snapshot-export-frame.solid {
   background: #2b3440;
 }
 

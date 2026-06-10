@@ -115,6 +115,7 @@ if (code === "it works") {
   let appSettings: AppSettings = defaultAppSettings;
   let isSettingsOpen = false;
   let isHotkeyOpen = false;
+  let isWelcomeHotkeyOpen = false;
   let hotkeyDraft = defaultAppSettings.captureHotkey;
   let settingsError = '';
   let isUiSuspended = false;
@@ -168,15 +169,23 @@ if (code === "it works") {
     settingsError = '';
   }
 
-  function openHotkeySettings(): void {
+  function openHotkeySettings(isWelcome = false): void {
     hotkeyDraft = appSettings.captureHotkey;
+    isWelcomeHotkeyOpen = isWelcome;
     settingsError = '';
     isHotkeyOpen = true;
   }
 
   function closeHotkeySettings(): void {
+    const shouldCompleteWelcome = isWelcomeHotkeyOpen;
+
     isHotkeyOpen = false;
+    isWelcomeHotkeyOpen = false;
     settingsError = '';
+
+    if (shouldCompleteWelcome) {
+      void updateAppSettings({ welcomeCompleted: true });
+    }
   }
 
   function normalizeKeyName(key: string): string {
@@ -246,7 +255,8 @@ if (code === "it works") {
       return;
     }
 
-    await updateAppSettings({ captureHotkey: hotkeyDraft });
+    await updateAppSettings({ captureHotkey: hotkeyDraft, welcomeCompleted: true });
+    isWelcomeHotkeyOpen = false;
     isHotkeyOpen = false;
   }
 
@@ -477,8 +487,12 @@ if (code === "it works") {
     exportState = action === 'save' ? 'saving' : 'copying';
     await tick();
 
+    let cleanupExportFrame: (() => void) | undefined;
+
     try {
-      const exportNode = onlyCode || !includeBackground ? previewNode : stageNode;
+      const exportFrame = !onlyCode && includeBackground ? createSnapshotExportFrame() : null;
+      cleanupExportFrame = exportFrame?.cleanup;
+      const exportNode = exportFrame?.node ?? previewNode;
       const dataUrl = await renderNodeToPngDataUrl(exportNode);
 
       if (action === 'save') {
@@ -496,12 +510,38 @@ if (code === "it works") {
     } catch {
       exportState = 'failed';
     } finally {
+      cleanupExportFrame?.();
+
       window.setTimeout(() => {
         if (exportState === 'saved' || exportState === 'copied' || exportState === 'failed') {
           exportState = 'idle';
         }
       }, 1600);
     }
+  }
+
+  function createSnapshotExportFrame(): { node: HTMLElement; cleanup: () => void } {
+    const exportPadding = 80;
+    const frame = document.createElement('div');
+    const previewClone = previewNode.cloneNode(true) as HTMLElement;
+    const previewRect = previewNode.getBoundingClientRect();
+
+    frame.className = `snapshot-export-frame ${backdrop}`;
+    frame.style.setProperty('--export-padding', `${exportPadding}px`);
+    frame.style.width = `${Math.ceil(previewRect.width) + exportPadding * 2}px`;
+    previewClone.classList.add('snapshot-export-clone');
+    previewClone.style.width = `${Math.ceil(previewRect.width)}px`;
+    previewClone.style.maxWidth = 'none';
+    previewClone.style.animation = 'none';
+    previewClone.style.transform = 'none';
+
+    frame.appendChild(previewClone);
+    document.body.appendChild(frame);
+
+    return {
+      node: frame,
+      cleanup: () => frame.remove(),
+    };
   }
 
   onMount(() => {
@@ -511,6 +551,10 @@ if (code === "it works") {
       appSettings = settings;
       hotkeyDraft = settings.captureHotkey;
       isUiSuspended = settings.startInTray && document.visibilityState === 'hidden';
+
+      if (!settings.welcomeCompleted) {
+        openHotkeySettings(true);
+      }
     });
 
     const listeners: Promise<UnlistenFn>[] = [];
@@ -709,7 +753,7 @@ if (code === "it works") {
         </label>
 
         <label class="toggle-row" class:disabled={onlyCode}>
-          <span>Include background</span>
+          <span>Background</span>
           <span class="switch">
             <input type="checkbox" checked={includeBackground} on:change={onIncludeBackgroundChange} disabled={onlyCode} />
             <span class="switch-track" aria-hidden="true">
@@ -719,7 +763,7 @@ if (code === "it works") {
         </label>
 
         <label class="toggle-row" class:disabled={onlyCode}>
-          <span>Include title bar</span>
+          <span>Title bar</span>
           <span class="switch">
             <input type="checkbox" checked={includeTitleBar} on:change={onIncludeTitleBarChange} disabled={onlyCode} />
             <span class="switch-track" aria-hidden="true">
@@ -777,7 +821,7 @@ if (code === "it works") {
             <strong>Capture hotkey</strong>
             <span>{appSettings.captureHotkey}</span>
           </div>
-          <button class="mini-action" type="button" on:click={openHotkeySettings}>
+          <button class="mini-action" type="button" on:click={() => openHotkeySettings()}>
             <Keyboard size={15} strokeWidth={2.25} aria-hidden="true" />
             Change
           </button>
@@ -848,7 +892,7 @@ if (code === "it works") {
       <header class="modal-header">
         <div>
           <span class="modal-kicker">Shortcut</span>
-          <h2 id="hotkey-title">Press new hotkey</h2>
+          <h2 id="hotkey-title">{isWelcomeHotkeyOpen ? 'Welcome to CodeSnap' : 'Press new hotkey'}</h2>
         </div>
         <button class="modal-close" type="button" aria-label="Close hotkey settings" on:click={closeHotkeySettings}>
           <X size={18} strokeWidth={2.35} aria-hidden="true" />
@@ -864,13 +908,21 @@ if (code === "it works") {
           on:keydown={onHotkeyCapture}
           on:focus={(event) => (event.currentTarget as HTMLInputElement).select()}
         />
-        <small class="hotkey-hint">Use a modifier combo, for example Ctrl+Shift+S.</small>
+        <small class="hotkey-hint">
+          {#if isWelcomeHotkeyOpen}
+            Choose a comfortable shortcut. Select code anywhere, press it, and CodeSnap opens with that code ready to style.
+          {:else}
+            Use a modifier combo, for example Ctrl+Shift+S.
+          {/if}
+        </small>
         {#if settingsError}
           <p class="settings-error">{settingsError}</p>
         {/if}
         <div class="modal-actions">
-          <button class="mini-action ghost" type="button" on:click={closeHotkeySettings}>Cancel</button>
-          <button class="mini-action" type="button" disabled={!isCompleteHotkey(hotkeyDraft)} on:click={saveHotkeySettings}>Save hotkey</button>
+          <button class="mini-action ghost" type="button" on:click={closeHotkeySettings}>{isWelcomeHotkeyOpen ? 'Skip for now' : 'Cancel'}</button>
+          <button class="mini-action" type="button" disabled={!isCompleteHotkey(hotkeyDraft)} on:click={saveHotkeySettings}>
+            {isWelcomeHotkeyOpen ? 'Start with this hotkey' : 'Save hotkey'}
+          </button>
         </div>
       </div>
     </div>

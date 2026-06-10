@@ -1,8 +1,13 @@
 import { toPng } from 'html-to-image';
 
 export async function renderNodeToPngDataUrl(node: HTMLElement): Promise<string> {
-  const width = Math.ceil(node.getBoundingClientRect().width);
-  const height = Math.ceil(Math.max(node.scrollHeight, node.getBoundingClientRect().height));
+  const rect = node.getBoundingClientRect();
+  const width = Math.ceil(Math.max(rect.width, node.offsetWidth));
+  const height = Math.ceil(Math.max(node.scrollHeight, rect.height, node.offsetHeight));
+
+  if (width <= 0 || height <= 0) {
+    throw new Error('Snapshot target has no renderable size.');
+  }
 
   return toPng(node, {
     cacheBust: true,

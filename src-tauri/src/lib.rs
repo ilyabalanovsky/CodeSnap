@@ -43,12 +43,13 @@ struct CapturedCodePayload {
 }
 
 #[derive(Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase")]
 struct AppSettings {
     capture_hotkey: String,
     launch_at_login: bool,
     start_in_tray: bool,
     disable_animations: bool,
+    welcome_completed: bool,
 }
 
 impl Default for AppSettings {
@@ -58,6 +59,7 @@ impl Default for AppSettings {
             launch_at_login: false,
             start_in_tray: false,
             disable_animations: false,
+            welcome_completed: false,
         }
     }
 }
@@ -311,6 +313,7 @@ fn normalize_app_settings(settings: AppSettings) -> AppSettings {
         launch_at_login: settings.launch_at_login,
         start_in_tray: settings.start_in_tray,
         disable_animations: settings.disable_animations,
+        welcome_completed: settings.welcome_completed,
     }
 }
 
