@@ -20,13 +20,13 @@ jobs:
         include:
           - os: windows-latest
             label: windows-x64
-            artifact_name: CodeSnap-windows-x64.zip
+            bundle_args: nsis
           - os: macos-14
             label: macos-arm64
-            artifact_name: CodeSnap-macos-arm64.tar.gz
+            bundle_args: dmg
           - os: ubuntu-22.04
             label: linux-x64
-            artifact_name: CodeSnap-linux-x64.tar.gz
+            bundle_args: appimage deb
 
     steps:
       - name: Checkout
@@ -64,36 +64,134 @@ jobs:
       - name: Install frontend dependencies
         run: npm install
 
-      - name: Build desktop binary
-        run: npm run tauri build
+      - name: Sync app version from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: npm run sync:version -- ${{ github.ref_name }}
 
-      - name: Package Windows binary
+      - name: Build desktop packages
+        run: npm run tauri build -- --ci --bundles ${{ matrix.bundle_args }}
+
+      - name: Collect Windows release assets
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path release
-          Copy-Item src-tauri/target/release/codesnap.exe release/CodeSnap.exe
-          Compress-Archive -Path release/CodeSnap.exe -DestinationPath "${{ matrix.artifact_name }}"
+          New-Item -ItemType Directory -Force -Path release | Out-Null
 
-      - name: Package Unix binary
-        if: runner.os != 'Windows'
+          Copy-Item src-tauri/target/release/codesnap.exe release/CodeSnap-windows-x64-portable.exe
+
+          $setup = Get-ChildItem src-tauri/target/release/bundle/nsis -Filter *.exe | Select-Object -First 1
+          if (-not $setup) {
+            throw "NSIS setup executable was not found."
+          }
+          Copy-Item $setup.FullName release/CodeSnap-windows-x64-setup.exe
+
+      - name: Collect macOS release assets
+        if: runner.os == 'macOS'
         shell: bash
         run: |
+          set -euo pipefail
           mkdir -p release
-          cp src-tauri/target/release/codesnap release/CodeSnap
-          chmod +x release/CodeSnap
-          tar -czf "${{ matrix.artifact_name }}" -C release CodeSnap
 
-      - name: Upload workflow artifact
+          dmg="$(find src-tauri/target/release/bundle/dmg -maxdepth 1 -name '*.dmg' | head -n 1)"
+          if [ -z "$dmg" ]; then
+            echo "DMG file was not found." >&2
+            exit 1
+          fi
+          cp "$dmg" release/CodeSnap-macos-arm64.dmg
+
+      - name: Collect Linux release assets
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+
+          appimage="$(find src-tauri/target/release/bundle/appimage -maxdepth 1 -name '*.AppImage' | head -n 1)"
+          if [ -z "$appimage" ]; then
+            echo "AppImage file was not found." >&2
+            exit 1
+          fi
+          cp "$appimage" release/CodeSnap-linux-x64.AppImage
+          chmod +x release/CodeSnap-linux-x64.AppImage
+
+          deb="$(find src-tauri/target/release/bundle/deb -maxdepth 1 -name '*.deb' | head -n 1)"
+          if [ -z "$deb" ]; then
+            echo "DEB file was not found." >&2
+            exit 1
+          fi
+          cp "$deb" release/CodeSnap-linux-x64.deb
+
+      - name: Upload release assets
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_name }}
+          name: codesnap-${{ matrix.label }}
+          path: release/*
           if-no-files-found: error
 
-      - name: Attach binary to GitHub Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+  publish:
+    name: Publish GitHub Release
+    needs: build
+    runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          files: ${{ matrix.artifact_name }}
-          generate_release_notes: true
+          fetch-depth: 0
+
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create checksums and release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cd release-assets
+          sha256sum CodeSnap-* > SHA256SUMS.txt
+          cd ..
+
+          tag="${GITHUB_REF_NAME}"
+          previous_tag="$(git tag --sort=-version:refname | grep -v "^${tag}$" | head -n 1 || true)"
+
+          {
+            echo "## CodeSnap ${tag}"
+            echo
+            echo "A lightweight desktop app for turning code into polished PNG screenshots."
+            echo
+            echo "### Downloads"
+            echo
+            echo "- **Windows:** \`CodeSnap-windows-x64-setup.exe\` or \`CodeSnap-windows-x64-portable.exe\`"
+            echo "- **macOS Apple Silicon:** \`CodeSnap-macos-arm64.dmg\`"
+            echo "- **Linux:** \`CodeSnap-linux-x64.AppImage\` or \`CodeSnap-linux-x64.deb\`"
+            echo
+            echo "### Verify downloads"
+            echo
+            echo "Checksums are included in \`SHA256SUMS.txt\`."
+            echo
+            echo "### First launch note"
+            echo
+            echo "These builds are currently unsigned, so Windows SmartScreen or macOS Gatekeeper may warn on first launch. Download only from this GitHub release."
+            echo
+            if [ -n "$previous_tag" ]; then
+              echo "### Full Changelog"
+              echo
+              echo "https://github.com/${GITHUB_REPOSITORY}/compare/${previous_tag}...${tag}"
+            else
+              echo "### Full Changelog"
+              echo
+              echo "https://github.com/${GITHUB_REPOSITORY}/commits/${tag}"
+            fi
+          } > release-assets/RELEASE_NOTES.md
+
+      - name: Attach assets to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-assets/RELEASE_NOTES.md
+          files: |
+            release-assets/CodeSnap-*
+            release-assets/SHA256SUMS.txt

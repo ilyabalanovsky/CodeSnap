@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "dist:minimal": "tauri build"
+    "sync:version": "node scripts/sync-version-from-tag.mjs",
+    "dist:minimal": "tauri build -- --no-bundle"
   },
   "dependencies": {
     "@babel/runtime": "^7.29.7",
