@@ -54,7 +54,7 @@ export type AppSettings = {
 };
 
 export const defaultAppSettings: AppSettings = {
-  captureHotkey: 'Ctrl+Shift+S',
+  captureHotkey: '',
   launchAtLogin: false,
   startInTray: false,
   disableAnimations: false,

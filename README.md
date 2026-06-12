@@ -1,12 +1,12 @@
 <div align="center">
 
-# CodeSnap
+# SnapScript
 
-<img src="./assets/title.png" alt="CodeSnap - beautiful code screenshots" width="760" />
+<img src="./assets/title.png" alt="SnapScript - beautiful code screenshots" width="760" />
 
 **Beautiful code screenshots, straight from your desktop.**
 
-CodeSnap is a lightweight offline desktop app for turning code snippets into polished PNG images for documentation, presentations, blog posts, social media, chats, pull requests, and bug reports.
+SnapScript is a lightweight offline desktop app for turning code snippets into polished PNG images for documentation, presentations, blog posts, social media, chats, pull requests, and bug reports.
 
 [Download latest release](../../releases/latest)
 
@@ -14,11 +14,11 @@ CodeSnap is a lightweight offline desktop app for turning code snippets into pol
 
 ## Preview
 
-![CodeSnap main screen](./assets/codesnap-main-screen.png)
+![SnapScript main screen](./assets/snapscript-main-screen.png)
 
-## Why Use CodeSnap
+## Why Use SnapScript
 
-CodeSnap is a fast local alternative to browser-based code screenshot tools like Carbon.now.sh. It keeps the whole flow on your machine: capture code, style it, export it, and share it.
+SnapScript is a fast local alternative to browser-based code screenshot tools like Carbon.now.sh. It keeps the whole flow on your machine: capture code, style it, export it, and share it.
 
 Use it when you need:
 
@@ -29,7 +29,7 @@ Use it when you need:
 
 ## How To Use
 
-1. Download CodeSnap from the [Releases page](../../releases/latest).
+1. Download SnapScript from the [Releases page](../../releases/latest).
 2. Run the app and keep it open or minimized to the system tray.
 3. Select code in your editor, terminal, browser, or documentation.
 4. Press the capture hotkey.
@@ -62,8 +62,8 @@ Use it when you need:
 
 ## Privacy
 
-CodeSnap renders screenshots locally. Your code snippets do not need to be uploaded to an online screenshot service.
+SnapScript renders screenshots locally. Your code snippets do not need to be uploaded to an online screenshot service.
 
 ## License
 
-CodeSnap is released under the GPL-3.0 license.
+SnapScript is released under the GPL-3.0 license.

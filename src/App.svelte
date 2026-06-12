@@ -20,9 +20,9 @@
     className: string;
   };
 
-  const codeCapturedEvent = 'codesnap://code-captured';
-  const uiHiddenEvent = 'codesnap://ui-hidden';
-  const uiShownEvent = 'codesnap://ui-shown';
+  const codeCapturedEvent = 'snapscript://code-captured';
+  const uiHiddenEvent = 'snapscript://ui-hidden';
+  const uiShownEvent = 'snapscript://ui-shown';
 
   const sampleCode = `const code = "it works";
 
@@ -177,15 +177,14 @@ if (code === "it works") {
   }
 
   function closeHotkeySettings(): void {
-    const shouldCompleteWelcome = isWelcomeHotkeyOpen;
+    if (isWelcomeHotkeyOpen) {
+      settingsError = 'Choose a shortcut to finish setup.';
+      return;
+    }
 
     isHotkeyOpen = false;
     isWelcomeHotkeyOpen = false;
     settingsError = '';
-
-    if (shouldCompleteWelcome) {
-      void updateAppSettings({ welcomeCompleted: true });
-    }
   }
 
   function normalizeKeyName(key: string): string {
@@ -463,7 +462,7 @@ if (code === "it works") {
       .replace(/[\\/:*?"<>|]/g, '-')
       .replace(/\s+/g, ' ');
 
-    return `${safeName || 'codesnap'}.png`;
+    return `${safeName || 'snapscript'}.png`;
   }
 
   async function loadClipboard(): Promise<void> {
@@ -595,11 +594,11 @@ if (code === "it works") {
 </script>
 
 <svelte:head>
-  <title>CodeSnap</title>
+  <title>SnapScript</title>
 </svelte:head>
 
 <main class="app-shell" class:ui-suspended={isUiSuspended} class:motion-disabled={appSettings.disableAnimations}>
-  <section bind:this={stageNode} class="stage" class:no-background={!includeBackground && !onlyCode} class:only-code={onlyCode} class:aurora={backdrop === 'aurora'} class:red={backdrop === 'red'} class:violet={backdrop === 'violet'} class:blue={backdrop === 'blue'} class:sunset={backdrop === 'sunset'} class:mint={backdrop === 'mint'} class:graphite={backdrop === 'graphite'} class:paper={backdrop === 'paper'} class:solid={backdrop === 'solid'} aria-label="Editable code snapshot">
+  <section bind:this={stageNode} class="stage" class:no-background={!includeBackground && !onlyCode} class:only-code={onlyCode} class:aurora={backdrop === 'aurora'} class:red={backdrop === 'red'} class:violet={backdrop === 'violet'} class:blue={backdrop === 'blue'} class:sunset={backdrop === 'sunset'} class:mint={backdrop === 'mint'} class:graphite={backdrop === 'graphite'} class:paper={backdrop === 'paper'} class:solid={backdrop === 'solid'} aria-label="Editable snapscriptshot">
     {#key backgroundMotionKey}
       {#if backgroundFlashMode}
         <span class={`stage-flash ${backgroundFlashBackdrop}`} class:out={backgroundFlashMode === 'out'} aria-hidden="true"></span>
@@ -807,7 +806,7 @@ if (code === "it works") {
     <div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" tabindex="-1" on:click|stopPropagation on:keydown|stopPropagation>
       <header class="modal-header">
         <div>
-          <span class="modal-kicker">CodeSnap</span>
+          <span class="modal-kicker">SnapScript</span>
           <h2 id="settings-title">Settings</h2>
         </div>
         <button class="modal-close" type="button" aria-label="Close settings" on:click={closeSettings}>
@@ -819,7 +818,7 @@ if (code === "it works") {
         <div class="setting-line hotkey-line">
           <div>
             <strong>Capture hotkey</strong>
-            <span>{appSettings.captureHotkey}</span>
+            <span>{appSettings.captureHotkey || 'Not set'}</span>
           </div>
           <button class="mini-action" type="button" on:click={() => openHotkeySettings()}>
             <Keyboard size={15} strokeWidth={2.25} aria-hidden="true" />
@@ -830,7 +829,7 @@ if (code === "it works") {
         <label class="setting-line">
           <span>
             <strong>Launch at login</strong>
-            <small>Start CodeSnap together with the system.</small>
+            <small>Start SnapScript together with the system.</small>
           </span>
           <span class="switch">
             <input
@@ -892,17 +891,20 @@ if (code === "it works") {
       <header class="modal-header">
         <div>
           <span class="modal-kicker">Shortcut</span>
-          <h2 id="hotkey-title">{isWelcomeHotkeyOpen ? 'Welcome to CodeSnap' : 'Press new hotkey'}</h2>
+          <h2 id="hotkey-title">{isWelcomeHotkeyOpen ? 'Welcome to SnapScript' : 'Press new hotkey'}</h2>
         </div>
-        <button class="modal-close" type="button" aria-label="Close hotkey settings" on:click={closeHotkeySettings}>
-          <X size={18} strokeWidth={2.35} aria-hidden="true" />
-        </button>
+        {#if !isWelcomeHotkeyOpen}
+          <button class="modal-close" type="button" aria-label="Close hotkey settings" on:click={closeHotkeySettings}>
+            <X size={18} strokeWidth={2.35} aria-hidden="true" />
+          </button>
+        {/if}
       </header>
 
       <div class="modal-content">
         <input
           class="hotkey-input"
           aria-label="New capture hotkey"
+          placeholder="Press your shortcut"
           readonly
           value={hotkeyDraft}
           on:keydown={onHotkeyCapture}
@@ -910,7 +912,7 @@ if (code === "it works") {
         />
         <small class="hotkey-hint">
           {#if isWelcomeHotkeyOpen}
-            Choose a comfortable shortcut. Select code anywhere, press it, and CodeSnap opens with that code ready to style.
+            Choose a comfortable shortcut. Select code anywhere, press it, and SnapScript opens with that code ready to style.
           {:else}
             Use a modifier combo, for example Ctrl+Shift+S.
           {/if}
@@ -919,7 +921,9 @@ if (code === "it works") {
           <p class="settings-error">{settingsError}</p>
         {/if}
         <div class="modal-actions">
-          <button class="mini-action ghost" type="button" on:click={closeHotkeySettings}>{isWelcomeHotkeyOpen ? 'Skip for now' : 'Cancel'}</button>
+          {#if !isWelcomeHotkeyOpen}
+            <button class="mini-action ghost" type="button" on:click={closeHotkeySettings}>Cancel</button>
+          {/if}
           <button class="mini-action" type="button" disabled={!isCompleteHotkey(hotkeyDraft)} on:click={saveHotkeySettings}>
             {isWelcomeHotkeyOpen ? 'Start with this hotkey' : 'Save hotkey'}
           </button>

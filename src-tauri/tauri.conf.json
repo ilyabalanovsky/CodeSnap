@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "CodeSnap",
+  "productName": "SnapScript",
   "version": "0.1.0",
-  "identifier": "dev.codesnap.app",
+  "identifier": "dev.snapscript.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "CodeSnap",
+        "title": "SnapScript",
         "width": 1120,
         "height": 760,
         "minWidth": 760,
@@ -35,6 +35,6 @@
     ],
     "category": "DeveloperTool",
     "shortDescription": "Beautiful code screenshots for desktop.",
-    "longDescription": "CodeSnap creates professional PNG screenshots of selected code from a lightweight Tauri desktop app."
+    "longDescription": "SnapScript creates professional PNG screenshots of selected code from a lightweight Tauri desktop app."
   }
 }

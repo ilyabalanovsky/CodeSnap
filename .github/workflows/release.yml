@@ -77,13 +77,13 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path release | Out-Null
 
-          Copy-Item src-tauri/target/release/codesnap.exe release/CodeSnap-windows-x64-portable.exe
+          Copy-Item src-tauri/target/release/snapscript.exe release/SnapScript-windows-x64-portable.exe
 
           $setup = Get-ChildItem src-tauri/target/release/bundle/nsis -Filter *.exe | Select-Object -First 1
           if (-not $setup) {
             throw "NSIS setup executable was not found."
           }
-          Copy-Item $setup.FullName release/CodeSnap-windows-x64-setup.exe
+          Copy-Item $setup.FullName release/SnapScript-windows-x64-setup.exe
 
       - name: Collect macOS release assets
         if: runner.os == 'macOS'
@@ -97,7 +97,7 @@ jobs:
             echo "DMG file was not found." >&2
             exit 1
           fi
-          cp "$dmg" release/CodeSnap-macos-arm64.dmg
+          cp "$dmg" release/SnapScript-macos-arm64.dmg
 
       - name: Collect Linux release assets
         if: runner.os == 'Linux'
@@ -111,20 +111,20 @@ jobs:
             echo "AppImage file was not found." >&2
             exit 1
           fi
-          cp "$appimage" release/CodeSnap-linux-x64.AppImage
-          chmod +x release/CodeSnap-linux-x64.AppImage
+          cp "$appimage" release/SnapScript-linux-x64.AppImage
+          chmod +x release/SnapScript-linux-x64.AppImage
 
           deb="$(find src-tauri/target/release/bundle/deb -maxdepth 1 -name '*.deb' | head -n 1)"
           if [ -z "$deb" ]; then
             echo "DEB file was not found." >&2
             exit 1
           fi
-          cp "$deb" release/CodeSnap-linux-x64.deb
+          cp "$deb" release/SnapScript-linux-x64.deb
 
       - name: Upload release assets
         uses: actions/upload-artifact@v4
         with:
-          name: codesnap-${{ matrix.label }}
+          name: snapscript-${{ matrix.label }}
           path: release/*
           if-no-files-found: error
 
@@ -152,22 +152,22 @@ jobs:
           set -euo pipefail
 
           cd release-assets
-          sha256sum CodeSnap-* > SHA256SUMS.txt
+          sha256sum SnapScript-* > SHA256SUMS.txt
           cd ..
 
           tag="${GITHUB_REF_NAME}"
           previous_tag="$(git tag --sort=-version:refname | grep -v "^${tag}$" | head -n 1 || true)"
 
           {
-            echo "## CodeSnap ${tag}"
+            echo "## SnapScript ${tag}"
             echo
             echo "A lightweight desktop app for turning code into polished PNG screenshots."
             echo
             echo "### Downloads"
             echo
-            echo "- **Windows:** \`CodeSnap-windows-x64-setup.exe\` or \`CodeSnap-windows-x64-portable.exe\`"
-            echo "- **macOS Apple Silicon:** \`CodeSnap-macos-arm64.dmg\`"
-            echo "- **Linux:** \`CodeSnap-linux-x64.AppImage\` or \`CodeSnap-linux-x64.deb\`"
+            echo "- **Windows:** \`SnapScript-windows-x64-setup.exe\` or \`SnapScript-windows-x64-portable.exe\`"
+            echo "- **macOS Apple Silicon:** \`SnapScript-macos-arm64.dmg\`"
+            echo "- **Linux:** \`SnapScript-linux-x64.AppImage\` or \`SnapScript-linux-x64.deb\`"
             echo
             echo "### Verify downloads"
             echo
@@ -193,5 +193,5 @@ jobs:
         with:
           body_path: release-assets/RELEASE_NOTES.md
           files: |
-            release-assets/CodeSnap-*
+            release-assets/SnapScript-*
             release-assets/SHA256SUMS.txt

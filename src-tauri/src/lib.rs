@@ -22,10 +22,10 @@ use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
-const DEFAULT_CAPTURE_SHORTCUT: &str = "Ctrl+Shift+S";
-const CAPTURE_EVENT: &str = "codesnap://code-captured";
-const UI_HIDDEN_EVENT: &str = "codesnap://ui-hidden";
-const UI_SHOWN_EVENT: &str = "codesnap://ui-shown";
+const DEFAULT_CAPTURE_SHORTCUT: &str = "";
+const CAPTURE_EVENT: &str = "snapscript://code-captured";
+const UI_HIDDEN_EVENT: &str = "snapscript://ui-hidden";
+const UI_SHOWN_EVENT: &str = "snapscript://ui-shown";
 const SETTINGS_FILE_NAME: &str = "settings.json";
 
 #[derive(Serialize)]
@@ -147,10 +147,16 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| {
-            let settings = read_app_settings(app.handle());
+            let mut settings = read_app_settings(app.handle());
 
             setup_tray(app.handle(), &settings.capture_hotkey)?;
-            register_capture_shortcut(app.handle(), &settings.capture_hotkey)?;
+            if let Err(error) = register_capture_shortcut(app.handle(), &settings.capture_hotkey) {
+                println!("SnapScript could not register capture shortcut: {error}");
+                settings.capture_hotkey.clear();
+                settings.welcome_completed = false;
+                let _ = write_app_settings(app.handle(), &settings);
+                update_tray_tooltip(app.handle(), &settings.capture_hotkey);
+            }
             setup_close_to_tray(app.handle());
             apply_startup_visibility(app.handle(), settings.start_in_tray);
 
@@ -166,19 +172,19 @@ pub fn run() {
             set_app_settings
         ])
         .run(tauri::generate_context!())
-        .expect("error while running CodeSnap");
+        .expect("error while running SnapScript");
 }
 
 fn setup_tray(app: &AppHandle, capture_shortcut: &str) -> tauri::Result<()> {
     let menu = MenuBuilder::new(app)
-        .text("show", "Open CodeSnap")
+        .text("show", "Open SnapScript")
         .text("capture", "Capture selected code")
         .separator()
         .text("quit", "Quit")
         .build()?;
 
-    let mut tray = TrayIconBuilder::with_id("codesnap")
-        .tooltip(format!("CodeSnap - {capture_shortcut}"))
+    let mut tray = TrayIconBuilder::with_id("snapscript")
+        .tooltip(tray_tooltip(capture_shortcut))
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id().as_ref() {
@@ -215,17 +221,24 @@ fn setup_tray(app: &AppHandle, capture_shortcut: &str) -> tauri::Result<()> {
 }
 
 fn register_capture_shortcut(app: &AppHandle, capture_shortcut: &str) -> Result<(), String> {
-    Shortcut::from_str(capture_shortcut).map_err(|error| error.to_string())?;
-
-    let is_capturing = Arc::new(AtomicBool::new(false));
+    let capture_shortcut = capture_shortcut.trim();
 
     app.global_shortcut()
         .unregister_all()
         .map_err(|error| error.to_string())?;
 
+    if capture_shortcut.is_empty() {
+        update_tray_tooltip(app, capture_shortcut);
+        return Ok(());
+    }
+
+    Shortcut::from_str(capture_shortcut).map_err(|error| error.to_string())?;
+
+    let is_capturing = Arc::new(AtomicBool::new(false));
+
     app.global_shortcut()
         .on_shortcut(capture_shortcut, move |app, _shortcut, event| {
-            println!("CodeSnap capture shortcut event: {:?}", event.state);
+            println!("SnapScript capture shortcut event: {:?}", event.state);
 
             if event.state != tauri_plugin_global_shortcut::ShortcutState::Released {
                 return;
@@ -246,11 +259,25 @@ fn register_capture_shortcut(app: &AppHandle, capture_shortcut: &str) -> Result<
         })
         .map_err(|error| error.to_string())?;
 
-    if let Some(tray) = app.tray_by_id("codesnap") {
-        let _ = tray.set_tooltip(Some(format!("CodeSnap - {capture_shortcut}")));
-    }
+    update_tray_tooltip(app, capture_shortcut);
 
     Ok(())
+}
+
+fn tray_tooltip(capture_shortcut: &str) -> String {
+    let capture_shortcut = capture_shortcut.trim();
+
+    if capture_shortcut.is_empty() {
+        "SnapScript - set a capture hotkey".to_string()
+    } else {
+        format!("SnapScript - {capture_shortcut}")
+    }
+}
+
+fn update_tray_tooltip(app: &AppHandle, capture_shortcut: &str) {
+    if let Some(tray) = app.tray_by_id("snapscript") {
+        let _ = tray.set_tooltip(Some(tray_tooltip(capture_shortcut)));
+    }
 }
 
 fn setup_close_to_tray(app: &AppHandle) {
@@ -293,7 +320,7 @@ fn apply_app_settings(app: &AppHandle, settings: &AppSettings) -> Result<(), Str
                 .map_err(|error| error.to_string())?,
             Ok(false) => {}
             Err(error) => {
-                println!("CodeSnap could not check autostart state: {error}");
+                println!("SnapScript could not check autostart state: {error}");
             }
         }
     }
@@ -303,17 +330,14 @@ fn apply_app_settings(app: &AppHandle, settings: &AppSettings) -> Result<(), Str
 
 fn normalize_app_settings(settings: AppSettings) -> AppSettings {
     let capture_hotkey = settings.capture_hotkey.trim();
+    let welcome_completed = settings.welcome_completed && !capture_hotkey.is_empty();
 
     AppSettings {
-        capture_hotkey: if capture_hotkey.is_empty() {
-            DEFAULT_CAPTURE_SHORTCUT.to_string()
-        } else {
-            capture_hotkey.to_string()
-        },
+        capture_hotkey: capture_hotkey.to_string(),
         launch_at_login: settings.launch_at_login,
         start_in_tray: settings.start_in_tray,
         disable_animations: settings.disable_animations,
-        welcome_completed: settings.welcome_completed,
+        welcome_completed,
     }
 }
 
@@ -353,7 +377,7 @@ fn capture_selection_and_open(app: AppHandle, source: &'static str) -> Result<St
     thread::sleep(Duration::from_millis(160));
 
     let code = read_clipboard_text(&app)?;
-    println!("CodeSnap captured clipboard text length: {}", code.len());
+    println!("SnapScript captured clipboard text length: {}", code.len());
 
     if code.trim().is_empty() {
         show_main_window(&app)?;
@@ -369,7 +393,7 @@ fn capture_selection_and_open(app: AppHandle, source: &'static str) -> Result<St
         },
     )
     .map_err(|error| error.to_string())?;
-    println!("CodeSnap emitted captured code event from {source}");
+    println!("SnapScript emitted captured code event from {source}");
 
     Ok(code)
 }
@@ -434,7 +458,7 @@ fn press_copy_key(enigo: &mut Enigo) -> Result<(), String> {
 
 fn normalize_png_file_name(file_name: &str) -> String {
     let trimmed = file_name.trim();
-    let base_name = if trimmed.is_empty() { "codesnap.png" } else { trimmed };
+    let base_name = if trimmed.is_empty() { "snapscript.png" } else { trimmed };
 
     if base_name.to_lowercase().ends_with(".png") {
         base_name.to_string()

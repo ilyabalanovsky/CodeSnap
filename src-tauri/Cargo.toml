@@ -1,17 +1,17 @@
 [package]
-name = "codesnap"
+name = "snapscript"
 version = "0.1.0"
 description = "A lightweight desktop utility for beautiful code screenshots."
-authors = ["CodeSnap"]
+authors = ["SnapScript"]
 edition = "2021"
 license = "GPL-3.0"
 
 [lib]
-name = "codesnap_lib"
+name = "snapscript_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [[bin]]
-name = "codesnap"
+name = "snapscript"
 path = "src/main.rs"
 
 [build-dependencies]

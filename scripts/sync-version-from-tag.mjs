@@ -48,23 +48,23 @@ await writeFile(
 const cargoLockPath = 'src-tauri/Cargo.lock';
 const cargoLock = await readFile(cargoLockPath, 'utf8');
 const cargoLockLines = cargoLock.split(/\r?\n/);
-let inCodesnapPackage = false;
+let inSnapScriptPackage = false;
 let updatedCargoLock = false;
 
 for (let index = 0; index < cargoLockLines.length; index += 1) {
   const line = cargoLockLines[index];
 
   if (line === '[[package]]') {
-    inCodesnapPackage = false;
+    inSnapScriptPackage = false;
     continue;
   }
 
-  if (line === 'name = "codesnap"') {
-    inCodesnapPackage = true;
+  if (line === 'name = "snapscript"') {
+    inSnapScriptPackage = true;
     continue;
   }
 
-  if (inCodesnapPackage && line.startsWith('version = ')) {
+  if (inSnapScriptPackage && line.startsWith('version = ')) {
     cargoLockLines[index] = `version = "${version}"`;
     updatedCargoLock = true;
     break;
@@ -72,9 +72,9 @@ for (let index = 0; index < cargoLockLines.length; index += 1) {
 }
 
 if (!updatedCargoLock) {
-  throw new Error(`Could not find CodeSnap package entry in ${cargoLockPath}.`);
+  throw new Error(`Could not find SnapScript package entry in ${cargoLockPath}.`);
 }
 
 await writeFile(cargoLockPath, cargoLockLines.join('\n'));
 
-console.log(`CodeSnap release version synced to ${version}.`);
+console.log(`SnapScript release version synced to ${version}.`);
